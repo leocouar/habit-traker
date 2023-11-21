@@ -11,7 +11,7 @@ function Layout({ children }) {
             <AuthContextProvider>
                 <Nav />
                 {children}
-                <Footer />
+                {/* <Footer /> */}
             </AuthContextProvider>
         </>
     )

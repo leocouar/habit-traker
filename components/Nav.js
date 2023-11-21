@@ -31,43 +31,6 @@ const Navbar = () => {
         };
         checkAuthentication();
     }, [user]);
-    // return (
-    //     <div className="h-20 w-full border-b-2 flex items-center justify-between p-2">
-    //       <ul className="flex">
-    //         <li className="p-2 cursor-pointer">
-    //           <Link href="/">Home</Link>
-    //         </li>
-    //         <li className="p-2 cursor-pointer">
-    //           <Link href="/about">About</Link>
-    //         </li>
-
-    //         {!user ? null : (
-    //           <li className="p-2 cursor-pointer">
-    //             <Link href="/profile">Profile</Link>
-    //           </li>
-    //         )}
-    //       </ul>
-
-    //       {loading ? null : !user ? (
-    //         <ul className="flex">
-    //           <li onClick={handleSignIn} className="p-2 cursor-pointer">
-    //             Login
-    //           </li>
-    //           <li onClick={handleSignIn} className="p-2 cursor-pointer">
-    //             Sign up
-    //           </li>
-    //         </ul>
-    //       ) : (
-    //         <div>
-    //           <p>Welcome, {user.displayName}</p>
-    //           <p className="cursor-pointer" onClick={handleSignOut}>
-    //             Sign out
-    //           </p>
-    //         </div>
-    //       )}
-    //     </div>
-    //   );
-
 
     return (
         <div className="navbar sticky top-0 z-40 shadow bg-base-100">
@@ -95,7 +58,6 @@ const Navbar = () => {
                                 <p className="hidden md:block">{user.displayName}</p>
                             </label>
                             <ul tabIndex={0} className="menu menu-sm dropdown-content mt-16 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                                <li><a>Portfolio</a></li>
                                 <li><button onClick={handleSignOut} >Sign out</button ></li>
                             </ul>
                         </div>
