@@ -28,6 +28,7 @@ const AddHabit = (reset) => {
                 name: habit.name,
                 creationDate: Timestamp.fromDate(new Date),
                 userId:user.uid,
+                history:[],
             }).then(
                 setHabit(initialHabit)
             )   
@@ -38,7 +39,7 @@ const AddHabit = (reset) => {
         <>
             <form onSubmit={handleAddHabit}>
                 <div className="join">
-                    <input value={habit.name} type='text' name='name' onChange={handleChange} className="input input-bordered join-item" placeholder="Habit" />
+                    <input value={habit.name} type='text' name='name' onChange={handleChange} className="input input-bordered join-item" placeholder="Habit" required />
                     <button type="submit" className="btn join-item rounded-r-full">Crear</button>
                 </div>
             </form>

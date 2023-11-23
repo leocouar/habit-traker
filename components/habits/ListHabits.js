@@ -42,65 +42,69 @@ const ListHabits = () => {
         loadHabits()
     }
 
-    const handleAddProgress = async (habitId) => {
+    const handleCheckboxChange = async (habitId, completed) => {
         try {
             const habitRef = doc(db, 'habits', habitId);
             const habitDoc = await getDoc(habitRef);
             const habitData = habitDoc.data();
-
+    
+            // Asegúrate de que history esté inicializado como un array
+            habitData.history = habitData.history || [];
+    
             // Obtener la fecha actual en formato "AAAA-MM-DD"
             const currentDate = new Date().toISOString().split('T')[0];
-
-            // Agregar el progreso al historial del hábito
-            habitData.history.push({ date: currentDate, completed: true });
-
+    
+            // Buscar si ya existe un registro para la fecha actual en el historial
+            const todayEntryIndex = habitData.history.findIndex(entry => entry.date === currentDate);
+    
+            if (todayEntryIndex !== -1) {
+                // Si ya existe un registro para el día actual, cambiar su estado completed
+                habitData.history[todayEntryIndex].completed = completed;
+            } else {
+                // Si no existe un registro para el día actual, agregar uno nuevo con el número de días
+                const daysSinceStart = Math.ceil((new Date(currentDate) - new Date(habitData.startDate)) / (24 * 60 * 60 * 1000)) + 1;
+                habitData.history.push({ date: currentDate, completed: completed, daysSinceStart: daysSinceStart });
+    
+                // Llenar días intermedios con registros con completed establecido en false
+                const sortedHistory = habitData.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+                for (let i = 1; i < sortedHistory.length; i++) {
+                    const prevDate = sortedHistory[i - 1].date;
+                    const currentDate = sortedHistory[i].date;
+    
+                    const daysDifference = (new Date(currentDate) - new Date(prevDate)) / (24 * 60 * 60 * 1000);
+    
+                    for (let j = 1; j < daysDifference; j++) {
+                        const intermediateDate = new Date(new Date(prevDate).getTime() + j * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                        const intermediateDaysSinceStart = sortedHistory[i - 1].daysSinceStart + 1;
+                        habitData.history.push({ date: intermediateDate, completed: false, daysSinceStart: intermediateDaysSinceStart });
+                    }
+                }
+    
+                // Volver a ordenar el historial después de agregar nuevos registros
+                habitData.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+            }
+    
             // Actualizar el documento en la base de datos
             await setDoc(habitRef, habitData);
-
+    
+            // Cambiar el estado del checkbox para reflejar el estado actual
+            // Puedes utilizar el estado local o un mecanismo similar para manejar el estado del checkbox en React
+            // Ejemplo: setCheckboxState(completed);
+    
             // Volver a cargar la lista de hábitos después de la actualización
             loadHabits();
         } catch (error) {
-            console.error('Error al agregar progreso al hábito:', error);
+            console.error('Error al cambiar el estado del progreso del hábito:', error);
         }
     };
-
-    const handleCheckboxChange = async (habitId, index, completed) => {
-        try {
-          const habitRef = doc(db, 'habits', habitId);
-          const habitDoc = await getDoc(habitRef);
-          const habitData = habitDoc.data();
-      
-          if (!habitData.history) {
-            // Si el historial no está definido, créalo como un array vacío
-            habitData.history = [];
-          }
-      
-          // Asegúrate de que haya suficientes elementos en el historial hasta el índice que estás modificando
-          for (let i = habitData.history.length; i <= index; i++) {
-            habitData.history.push({ completed: false });
-          }
-      
-          // Cambiar el estado del progreso en el historial del hábito
-          habitData.history[index].completed = !completed;
-      
-          // Actualizar el documento en la base de datos
-          await setDoc(habitRef, habitData);
-      
-          // Volver a cargar la lista de hábitos después de la actualización
-          loadHabits();
-        } catch (error) {
-          console.error('Error al cambiar el estado del progreso del hábito:', error);
-        }
-      };
-
     return (
         <>
-            <div className="bg-white mt-10 p-10 rounded-xl overflow-x-auto">
+            <div className="bg-white w-full mt-10 p-10 lg:w-1/2 rounded-xl h-full overflow-x-auto">
                 <div className="w-full flex mt-10 justify-end">
                     <AddHabit reset={loadHabits()} />
                 </div>
 
-                <table className="table p-10 w-1/2 transition ease-in-out">
+                <table className="table w-full transition ease-in-out">
                     {/* head */}
                     <thead>
                         <tr>
@@ -119,8 +123,8 @@ const ListHabits = () => {
                                         <input
                                             type="checkbox"
                                             checked={habit.data.history.length > 0 && habit.data.history[habit.data.history.length - 1]?.completed}
-                                            onChange={() => handleCheckboxChange(habit.id, habit.data.history.length - 1, habit.data.history[habit.data.history.length - 1]?.completed)}
-                                            className="checkbox checkbox-success"
+                                            onChange={(e) => handleCheckboxChange(habit.id, e.target.checked)}
+                                            className="checkbox checkbox-success cursor-pointer"
                                         />
                                     </label>
                                 </th>
@@ -132,18 +136,16 @@ const ListHabits = () => {
                                     </div>
                                 </td>
                                 <td>
-                                    <ul className="steps">
-                                        <li className="step step-success">Day 1</li>
-                                        <li className="step step-success">Day 2</li>
-                                        <li className="step">Day 3</li>
-                                        <li className="step">Day 4</li>
-                                        <li className="step">Day 5</li>
-                                        <li className="step">Day 6</li>
-                                        <li className="step">Day 7</li>
+                                    <ul className="steps flex justify-end overflow-x-hidden w-96">
+                                        {habit.data.history.map((step, index) => (
+                                            <li key={index} className={`step ${step.completed ? 'step-success' : ''}`}>
+                                                Day {index + 1}
+                                            </li>
+                                        ))}
                                     </ul>
                                 </td>
                                 <td>
-                                    <button onClick={() => handleDelete(habit.id)} className="btn btn-error btn-circle m-2">
+                                    <button onClick={() => handleDelete(habit.id)} className="btn btn-error btn-circle m-2 cursor-pointer">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
                                 </td>
